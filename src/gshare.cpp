@@ -43,7 +43,21 @@ uint32_t GShare::predict(uint32_t PC) {
   bool predict_taken = false;
 
   // TODO:
-
+  uint32_t pht_index = (PC ^ BHR_) & BHR_mask_; // index into PHT
+  bool taken = (PHT_[pht_index] >= 2); // >= 2 means taken
+  if (taken) {
+    // index into BTB
+    uint32_t btb_index = (PC >> 2) & BTB_mask_;
+    auto& btb_entry = BTB_[btb_index];
+    // only trust BTB if valid and tag matches
+    if (btb_entry.valid && btb_entry.tag == PC) {
+      next_PC = btb_entry.target;
+    }
+    else {
+      taken = false;
+      next_PC = PC + 4;
+    }
+  }
   DT(3, "*** GShare: predict PC=0x" << std::hex << PC << std::dec
         << ", next_PC=0x" << std::hex << next_PC << std::dec
         << ", predict_taken=" << predict_taken);
