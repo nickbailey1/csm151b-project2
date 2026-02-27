@@ -70,7 +70,7 @@ void GShare::update(uint32_t PC, uint32_t next_PC, bool taken) {
         << ", taken=" << taken);
 
   // TODO:
-  uint32_t pht_index = (PC ^ BHR_) & BHR_mask_; // index into PHT
+  uint32_t pht_index = (PC ^ BHR_) & BHR_mask_; // update saturating counter
   if (taken) {
     if (PHT_[pht_index] < 3) {
       PHT_[pht_index]++;
@@ -81,13 +81,13 @@ void GShare::update(uint32_t PC, uint32_t next_PC, bool taken) {
       PHT_[pht_index]--;
     }
   }
-  if (taken) {
+  if (taken) { // store actual target whenever branch is taken
     uint32_t btb_index = (PC >>2) & BTB_mask_;
     BTB_[btb_index].valid = true;
     BTB_[btb_index].tag = PC;
     BTB_[btb_index].target = next_PC;
   }
-  BHR_ = ((BHR_ << 1) | (taken ? 1 : 0)) & BHR_mask_;
+  BHR_ = ((BHR_ << 1) | (taken ? 1 : 0)) & BHR_mask_; // shift in actual outcome
 }
 
 ///////////////////////////////////////////////////////////////////////////////
