@@ -44,8 +44,8 @@ uint32_t GShare::predict(uint32_t PC) {
 
   // TODO:
   uint32_t pht_index = (PC ^ BHR_) & BHR_mask_; // index into PHT
-  bool taken = (PHT_[pht_index] >= 2); // >= 2 means taken
-  if (taken) {
+  predict_taken = (PHT_[pht_index] >= 2); // >= 2 means taken
+  if (predict_taken) {
     // index into BTB
     uint32_t btb_index = (PC >> 2) & BTB_mask_;
     auto& btb_entry = BTB_[btb_index];
@@ -54,7 +54,7 @@ uint32_t GShare::predict(uint32_t PC) {
       next_PC = btb_entry.target;
     }
     else {
-      taken = false;
+      predict_taken = false;
       next_PC = PC + 4;
     }
   }
