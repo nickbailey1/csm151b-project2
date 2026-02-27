@@ -45,6 +45,20 @@ public:
   void update(uint32_t PC, uint32_t next_PC, bool taken) override;
 
   // TODO: Add your own methods here
+private:
+  struct BTB_entry_t {
+    bool valid;
+    uint32_t tag;
+    uint32_t target;
+  };
+
+  std::vector<BTB_entry_t> BTB_; // branch target buffer
+  std::vector<uint8_t> PHT_; // pattern history table 2 bit saturating counters
+  uint32_t BHR_; // branch history reg
+  uint32_t BTB_shift_; // log2(BTB_size)
+  uint32_t BTB_mask_; // BTB_size- 1
+  uint32_t BHR_mask_; // (1 << BHR_size) -1
+  }
 };
 
 class GSharePlus : public BranchPredictor {
