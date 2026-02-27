@@ -58,7 +58,6 @@ private:
   uint32_t BTB_shift_; // log2(BTB_size)
   uint32_t BTB_mask_; // BTB_size- 1
   uint32_t BHR_mask_; // (1 << BHR_size) -1
-  }
 };
 
 class GSharePlus : public BranchPredictor {
