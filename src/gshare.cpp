@@ -92,9 +92,15 @@ void GShare::update(uint32_t PC, uint32_t next_PC, bool taken) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-GSharePlus::GSharePlus(uint32_t BTB_size, uint32_t BHR_size) {
-  (void) BTB_size;
-  (void) BHR_size;
+GSharePlus::GSharePlus(uint32_t BTB_size, uint32_t BHR_size)
+  : BTB_(BTB_size, BTB_entry_t{false, 0x0, 0x0}) // init BTB_ w/ BTB_size entries
+  , GPHT_((1 << BHR_size), 0x0) // init GPHT_ w/ 2^BHR_size zeroes
+  , LPHT_(BTB_size, 0x0) // LPHT_ w/ BTB_size zeroes
+  , META_((1 << BHR_size), 0x0) // same
+  , BHR_(0x0) // starts at 0
+  , BTB_mask_(BTB_size-1)
+  , BHR_mask_((1 << BHR_size)-1) {
+  //--
 }
 
 GSharePlus::~GSharePlus() {
@@ -103,12 +109,29 @@ GSharePlus::~GSharePlus() {
 
 uint32_t GSharePlus::predict(uint32_t PC) {
   uint32_t next_PC = PC + 4;
-  bool predict_taken = false;
-  (void) PC;
-  (void) next_PC;
-  (void) predict_taken;
+
+  uint32_t gpht_index = ((PC >> 2) ^ BHR_) & BHR_mask_;
+  bool gshare_taken = (GPHT_[gpht_index] >= 2); // gshare prediction
+  
+  uint32_t local_index = (PC >> 2) & BTB_mask_;
+  bool local_taken = (LPHT_[local_index] >= 2);
+
+  uint32_t meta_index = (PC >> 2) & BTB_mask_;
+  bool use_gshare = (META_[meta_index] >=2);
+  bool predict_taken = use_gshare ? gshare_taken : local_taken;
 
   // TODO: extra credit component
+  if (predict_taken) {
+    uint32_t btb_index = (PC >> 2) & BTB_mask_;
+    auto& entry = BTB_[btb_index];
+    if (entry.valid && entry.tag == PC) {
+      next_PC = entry.target;
+    }
+    else {
+      predict_taken = false;
+      next_PC = PC + 4;
+    }
+  }
 
   DT(3, "*** GShare+: predict PC=0x" << std::hex << PC << std::dec
         << ", next_PC=0x" << std::hex << next_PC << std::dec
@@ -117,10 +140,6 @@ uint32_t GSharePlus::predict(uint32_t PC) {
 }
 
 void GSharePlus::update(uint32_t PC, uint32_t next_PC, bool taken) {
-  (void) PC;
-  (void) next_PC;
-  (void) taken;
-
   DT(3, "*** GShare+: update PC=0x" << std::hex << PC << std::dec
         << ", next_PC=0x" << std::hex << next_PC << std::dec
         << ", taken=" << taken);
