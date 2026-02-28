@@ -96,7 +96,7 @@ GSharePlus::GSharePlus(uint32_t BTB_size, uint32_t BHR_size)
   : BTB_(BTB_size, BTB_entry_t{false, 0x0, 0x0}) // init BTB_ w/ BTB_size entries
   , GPHT_((1 << BHR_size), 0x0) // init GPHT_ w/ 2^BHR_size zeroes
   , LPHT_(BTB_size, 0x0) // LPHT_ w/ BTB_size zeroes
-  , META_((1 << BHR_size), 0x0) // same
+  , META_(BTB_size, 0x0) // same
   , BHR_(0x0) // starts at 0
   , BTB_mask_(BTB_size-1)
   , BHR_mask_((1 << BHR_size)-1) {
@@ -145,6 +145,46 @@ void GSharePlus::update(uint32_t PC, uint32_t next_PC, bool taken) {
         << ", taken=" << taken);
 
   // TODO: extra credit component
+  uint32_t gpht_index = ((PC >> 2) ^ BHR_) & BHR_mask_;
+  uint32_t local_index = (PC>>2) & BTB_mask_;
+  bool gshare_pred = (GPHT_[gpht_index] >= 2);
+  bool local_pred = (LPHT_[local_index] >= 2);
+  if (taken) { 
+    if (GPHT_[gpht_index] < 3)
+      GPHT_[gpht_index]++;
+  }
+  else {
+    if (GPHT_[gpht_index] > 0)
+      GPHT_[gpht_index]--;
+  }
+  if (taken) { 
+    if (LPHT_[local_index] < 3)
+      LPHT_[local_index]++;
+  }
+  else {
+    if (LPHT_[local_index] > 0)
+      LPHT_[local_index]--;
+  }
+
+  bool gshare_correct = (gshare_pred == taken);
+  bool local_correct = (local_pred == taken);
+  uint32_t meta_index = (PC >> 2) & BTB_mask_;
+  if (gshare_correct && !local_correct) {
+    if (META_[meta_index] < 3)
+      META_[meta_index]++;
+  }
+  else if (!gshare_correct && local_correct) {
+    if (META_[meta_index] > 0)
+      META_[meta_index]--;
+  }
+  
+  if (taken) {
+    uint32_t btb_index = (PC>>2) & BTB_mask_;
+    BTB_[btb_index].valid = true;
+    BTB_[btb_index].tag = PC;
+    BTB_[btb_index].target = next_PC;
+  }
+  BHR_ = ((BHR_ << 1) | (taken ? 1 : 0)) & BHR_mask_;
 }
 
 
