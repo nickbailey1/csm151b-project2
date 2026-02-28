@@ -43,7 +43,7 @@ uint32_t GShare::predict(uint32_t PC) {
   bool predict_taken = false;
 
   // TODO:
-  uint32_t pht_index = (PC ^ BHR_) & BHR_mask_; // index into PHT
+  uint32_t pht_index = ((PC >> 2) ^ BHR_) & BHR_mask_; // index into PHT
   predict_taken = (PHT_[pht_index] >= 2); // >= 2 means taken
   if (predict_taken) {
     // index into BTB
@@ -70,7 +70,7 @@ void GShare::update(uint32_t PC, uint32_t next_PC, bool taken) {
         << ", taken=" << taken);
 
   // TODO:
-  uint32_t pht_index = (PC ^ BHR_) & BHR_mask_; // update saturating counter
+  uint32_t pht_index = ((PC >> 2) ^ BHR_) & BHR_mask_; // update saturating counter
   if (taken) {
     if (PHT_[pht_index] < 3) {
       PHT_[pht_index]++;
