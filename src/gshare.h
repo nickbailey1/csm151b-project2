@@ -70,6 +70,19 @@ public:
   void update(uint32_t PC, uint32_t next_PC, bool taken) override;
 
   // TODO: extra credit component
+private:
+  struct BTB_entry_t {
+    bool valid;
+    uint32_t tag;
+    uint32_t target;
+  };
+  std::vector<BTB_entry_t> BTB_; //shared
+  std::vector<uint8_t> GPHT_; // gshare pht
+  std::vector<uint8_t> LPHT_; // local
+  std::vector<uint8_t> META_; // meta predictor
+  uint32_t BHR_; // global branch history reg
+  uint32_t BTB_mask_;
+  uint32_t BHR_mask_;
 };
 
 }
